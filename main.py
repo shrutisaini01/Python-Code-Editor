@@ -3,6 +3,8 @@
 from tkinter import *
 from tkinter import filedialog,messagebox
 import subprocess
+import threading
+from runner import run_code
 font_size=10
 path=''
 
@@ -63,16 +65,23 @@ def clear():
     textArea.delete('1.0', END)
     outputArea.delete('1.0', END)
 
-def run():
+def threaded_run():
     if path=='':
         messagebox.showerror('Error','Please save the file before running')
-    else:
-        command = f'python {path}'
-        runFile=subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
-        output,error=runFile.communicate()
-        outputArea.delete('1.0', END)
-        outputArea.insert(1.0,output)
-        outputArea.insert(1.0,error)
+    code = textArea.get("1.0", END)
+    user_input = inputArea.get("1.0", END)
+    result = run_code(code, user_input)
+    outputArea.delete("1.0", END)
+    outputArea.insert("1.0", result["stderr"] + result["stdout"])
+
+def run():
+    threading.Thread(target=threaded_run).start()
+        # command = f'python {path}'
+        # runFile=subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
+        # output,error=runFile.communicate()
+        # outputArea.delete('1.0', END)
+        # outputArea.insert(1.0,output)
+        # outputArea.insert(1.0,error)
 
 def font_inc(event=None):
     global font_size
@@ -87,7 +96,7 @@ def font_dec(event=None):
     outputArea.config(font=('arial', font_size, 'bold'))
 
 def highlight_syntax():
-    keywords = ['if', 'else', 'for', 'while', 'def', 'class', 'import', 'from', 'as', 'return', 'in', 'range', 'print']
+    keywords = ['if', 'else', 'for', 'while', 'def', 'class', 'import', 'from', 'as', 'return', 'in', 'range', 'print','int','input','float']
     operators = ['+', '-', '*', '/', '=', '==', '!=', '<', '>', '<=', '>=']
     for keyword in keywords:
         textArea.tag_config(keyword, foreground='#2E97A7')
@@ -168,6 +177,13 @@ outputArea.pack(side=LEFT,fill=BOTH,expand=True)
 scrollBar2.config(command=outputArea.yview)
 
 textArea.bind('<KeyRelease>', lambda event: highlight_syntax())
+# input area
+inputFrame = LabelFrame(root, text='Input', font=('arial', font_size, 'bold'))
+inputFrame.place(x=0, y=420, relwidth=1, height=80)
+
+inputArea = Text(inputFrame, font=('arial', font_size, 'bold'), height=5)
+inputArea.pack(fill=BOTH, expand=True)
+
 root.config(menu=myMenu)
 
 
